@@ -7,6 +7,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaFileUpload
 
 
 token_file = 'token.json'
@@ -54,6 +55,15 @@ class GoogleDriveAPI:
         self.credentials = check_credentials()
         self.drive_service = build("drive", "v3", credentials=self.credentials)
         self.sheets_service = build("sheets", "v4", credentials=self.credentials)
+
+
+    def get_drive_service(self):
+        """ Get the Google Drive service.
+
+        Returns:
+            Resource: The Google Drive service resource.
+        """
+        return self.drive_service
 
 
     def create_gsheet_file_on_root(self, filename: str) -> str:
@@ -438,3 +448,30 @@ class GoogleDriveAPI:
             return file_list[0]['id']
         else:
             return None
+
+
+    def create_file_with_content(self, local_file_path: str, drive_file_name: str=None, parent_folder_id: str=None) -> str:
+        """ Creates a file in Google Drive with the content of a local file.
+
+        Args:
+            local_file_path (str): The path to the local file to upload.
+            drive_file_name (str, optional): The name to give the file in Google Drive. Defaults to None.
+            parent_folder_id (str, optional): The ID of the parent folder in Google Drive. Defaults to None.
+
+        Returns:
+            str: ID of the created file in Google Drive.
+        """
+
+        # Google drive file name will be either the provided name or the local file name
+        file_metadata = {'name': drive_file_name or os.path.basename(local_file_path)}
+        if parent_folder_id:
+            file_metadata['parents'] = [parent_folder_id]
+
+        media = MediaFileUpload(local_file_path, resumable=True)
+
+        file = self.drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+        file_id = file.get('id')
+
+        print(f'Created file with ID: {file_id}')
+
+        return file_id

@@ -1,3 +1,4 @@
+import os
 import functions_framework
 from pandas import DataFrame
 from datetime import datetime, timezone
@@ -6,13 +7,27 @@ from scraping_imdb import ScrapingImdb
 from google_drive_api import GoogleDriveAPI
 
 
+def __upload_file(df: DataFrame) -> None:
+    gdrive_api = GoogleDriveAPI()
+    folder_id = '1t29Hfv5HBibnoDWD4KXBhnAgqB_J1kPB'
+
+    current_date = datetime.now(timezone.utc).date().isoformat()
+    filename = f'imdb_scraping_001_{current_date}.jsonl'
+
+    df.tail(10).to_json(filename, orient='records', lines=True)
+    gdrive_api.create_file_with_content(local_file_path=filename, drive_file_name=filename, parent_folder_id=folder_id)
+
+    if os.path.exists(filename):
+        os.remove(filename)
+
+
 def __upload_gsheet_testing(df: DataFrame) -> None:
     gdrive_api = GoogleDriveAPI()
     folder_id = '1t29Hfv5HBibnoDWD4KXBhnAgqB_J1kPB'
     current_date = datetime.now(timezone.utc).date().isoformat()
     file_name = f'imdb_scraping_testing_{current_date}'
 
-    df_data_test = df.head()
+    df_data_test = df.tail(10)
 
     file_id = gdrive_api.create_gsheet_file_in_folder(folder_id=folder_id, filename=file_name)
     print(f"File creqated with ID: {file_id}")
@@ -24,6 +39,8 @@ def main():
     df_imdb = imdb_scrapper.process()
 
     __upload_gsheet_testing(df=df_imdb)
+
+    __upload_file(df=df_imdb)
 
     data_json_imdb = df_imdb.head(3).to_dict('records')
     return data_json_imdb
