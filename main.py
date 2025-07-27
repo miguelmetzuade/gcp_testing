@@ -1,4 +1,5 @@
 import os
+from flask import jsonify
 import functions_framework
 from pandas import DataFrame
 from datetime import datetime, timezone
@@ -57,11 +58,12 @@ def hello_http(request):
         Response object using `make_response`
         <https://flask.palletsprojects.com/en/1.1.x/api/#flask.make_response>.
     """
+    print(f"INSIDE hello_http function.")
     request_json = request.get_json(silent=True)
     request_args = request.args
 
     return_data = main()
-    return return_data
+    return jsonify(return_data) # return_data
 
     # if request_json and 'name' in request_json:
     #     name = request_json['name']
