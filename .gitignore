@@ -1,0 +1,7 @@
+
+# pycache
+__pycache__/
+
+# Credentials
+client_secret.json
+token.json
